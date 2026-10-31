@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: pagina(~{::title}, ~{::section})}">
+<head><title>Nueva cita - VetCare</title></head>
+<body>
+<section>
+    <div class="encabezado">
+        <div><h1>Nueva cita</h1>
+            <div class="sub">Escriba el DNI del propietario: si ya esta registrado elija su mascota, y si es nuevo se registra aqui mismo</div></div>
+        <a class="btn btn-light" th:href="@{/citas}"><i class="bi bi-arrow-left me-1"></i>Agenda</a>
+    </div>
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post" th:action="@{/citas/nueva}" class="row g-3">
+
+                        <!-- 1 y 2: propietario y mascota (se verifica por DNI) -->
+                        <th:block th:replace="~{fragments/paciente :: bloque}"></th:block>
+
+                        <!-- 3: datos de la cita -->
+                        <div class="col-12"><hr class="my-1"><h6 class="fw-bold mb-0 mt-2"><i class="bi bi-calendar-check me-1"></i>3. Datos de la cita</h6></div>
+                        <div class="col-md-7">
+                            <label class="form-label">Veterinario <span class="text-danger">*</span></label>
+                            <select name="veterinario" id="vet" class="form-select" required th:data-url="@{/citas/nueva/horario}">
+                                <option value="">Seleccione...</option>
+                                <option th:each="v : ${veterinarios}" th:value="${v.ID_VETERINARIO}" th:text="${v.NOMBRE}"
+                                        th:selected="${(form != null and form['veterinario'] == v.ID_VETERINARIO.toString()) or (veterinario != null and veterinario == v.ID_VETERINARIO.longValue())}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Duracion</label>
+                            <select name="duracion" class="form-select">
+                                <option value="20" th:selected="${form != null and form['duracion'] == '20'}">20 min</option>
+                                <option value="30" th:selected="${form == null or form['duracion'] == '30'}">30 min</option>
+                                <option value="45" th:selected="${form != null and form['duracion'] == '45'}">45 min</option>
+                                <option value="60" th:selected="${form != null and form['duracion'] == '60'}">1 hora</option>
+                                <option value="90" th:selected="${form != null and form['duracion'] == '90'}">1 h 30</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label">Fecha y hora <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="fecha" class="form-control" required step="900"
+                                   th:value="${form != null ? form['fecha'] : #temporals.format(sugerida, 'yyyy-MM-dd''T''HH:mm')}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Motivo <span class="text-danger">*</span></label>
+                            <input name="motivo" class="form-control" required maxlength="200" placeholder="Ej. Control anual y vacunas"
+                                   th:value="${form != null ? form['motivo'] : null}">
+                        </div>
+                        <div class="col-12"><button class="btn btn-primary"><i class="bi bi-calendar-check me-1"></i>Programar cita</button></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-clock-history me-1 text-primary"></i>Horario del veterinario</div>
+                <div class="card-body">
+                    <div id="horarioCaja"><p class="text-muted small mb-0">Elija un veterinario para ver su horario.</p></div>
+                    <div class="alert alert-info small mb-0 mt-3">
+                        <i class="bi bi-info-circle me-1"></i>La cita debe estar dentro del horario del veterinario, en una fecha futura y sin chocar con otra cita.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script th:src="@{/js/paciente.js}"></script>
+    <script>
+        (function () {
+            const vet = document.getElementById('vet');
+            const caja = document.getElementById('horarioCaja');
+            const DIAS = ['', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
+            const dato = (f, k) => f[k] !== undefined ? f[k] : f[k.toLowerCase()];
+
+            function texto(t) {
+                const p = document.createElement('p');
+                p.className = 'text-muted small mb-0';
+                p.textContent = t;
+                caja.replaceChildren(p);
+            }
+
+            async function cargarHorario() {
+                if (!vet.value) { texto('Elija un veterinario para ver su horario.'); return; }
+                try {
+                    const r = await fetch(vet.dataset.url + '?veterinario=' + encodeURIComponent(vet.value),
+                        {headers: {'Accept': 'application/json'}});
+                    if (!r.ok) { throw new Error('HTTP ' + r.status); }
+                    const filas = await r.json();
+                    if (!filas.length) { texto('Sin horario registrado'); return; }
+                    const tabla = document.createElement('table');
+                    tabla.className = 'table table-sm mb-0';
+                    const cuerpo = document.createElement('tbody');
+                    filas.forEach(f => {
+                        const tr = document.createElement('tr');
+                        const dia = document.createElement('td');
+                        dia.textContent = DIAS[Number(dato(f, 'DIA_SEMANA'))] || '';
+                        const horas = document.createElement('td');
+                        horas.className = 'text-end';
+                        horas.textContent = dato(f, 'HORA_INICIO') + ' - ' + dato(f, 'HORA_FIN');
+                        tr.append(dia, horas);
+                        cuerpo.append(tr);
+                    });
+                    tabla.append(cuerpo);
+                    caja.replaceChildren(tabla);
+                } catch (e) {
+                    texto('No se pudo cargar el horario.');
+                }
+            }
+
+            vet.addEventListener('change', cargarHorario);
+            cargarHorario();
+        })();
+    </script>
+</section>
+</body>
+</html>

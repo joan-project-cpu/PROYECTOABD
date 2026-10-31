@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: pagina(~{::title}, ~{::section})}">
+<head><title>Reportes - VetCare</title></head>
+<body>
+<section>
+    <div class="encabezado">
+        <div><h1>Reportes</h1>
+            <div class="sub">Consultas analiticas sobre la actividad de la clinica</div></div>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-6 col-xl-4" th:each="r : ${reportes}">
+            <a class="card reporte-card" th:href="@{/reportes/{c}(c=${r.codigo()})}">
+                <div class="card-body">
+                    <div class="d-flex gap-3">
+                        <div class="icono"><i class="bi" th:classappend="${r.icono()}"></i></div>
+                        <div>
+                            <div class="fw-bold" th:text="${r.titulo()}"></div>
+                            <div class="small text-muted mb-2" th:text="${r.descripcion()}"></div>
+
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+</body>
+</html>

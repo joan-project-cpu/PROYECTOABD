@@ -1,0 +1,7 @@
+target/
+.git/
+config/db.properties
+nbproject/
+.idea/
+.vscode/
+*.log

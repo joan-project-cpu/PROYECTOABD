@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Bloque "Propietario y mascota" (lo usan Nueva cita y Emergencia). Se maneja con static/js/paciente.js.
+  Variables del modelo: razas (lista), form (datos reenviados si hubo error), prefillDni / prefillMascota (opcionales).
+-->
+<th:block th:fragment="bloque">
+    <div class="col-12">
+        <h6 class="fw-bold mb-0"><i class="bi bi-person me-1"></i>1. Propietario</h6>
+    </div>
+    <div class="col-md-5">
+        <label class="form-label" for="pDni">DNI del propietario <span class="text-danger">*</span></label>
+        <div class="input-group">
+            <input name="dni" id="pDni" class="form-control" required maxlength="12" inputmode="numeric"
+                   autocomplete="off" placeholder="Ej. 45871236" th:data-url="@{/propietarios/buscar-dni}"
+                   th:value="${form != null ? form['dni'] : prefillDni}">
+            <button type="button" class="btn btn-outline-primary" id="pBuscar"><i class="bi bi-search me-1"></i>Buscar</button>
+        </div>
+        <div class="form-text">El sistema verifica solo si ya esta registrado.</div>
+    </div>
+    <div class="col-md-7 d-flex align-items-center"><div id="pEstado" class="small" aria-live="polite"></div></div>
+    <input type="hidden" name="id_propietario" id="pId">
+
+    <!-- Propietario NUEVO -->
+    <div id="pNuevo" class="col-12 d-none">
+        <div class="row g-3 p-3 mx-0 rounded" style="background:#fffbeb;border:1px solid #fde68a">
+            <div class="col-12 small fw-semibold"><i class="bi bi-person-plus me-1"></i>Propietario nuevo: complete sus datos</div>
+            <div class="col-md-6">
+                <label class="form-label">Nombres <span class="text-danger">*</span></label>
+                <input name="nombres" class="form-control" required maxlength="60" disabled
+                       th:value="${form != null ? form['nombres'] : null}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Apellidos <span class="text-danger">*</span></label>
+                <input name="apellidos" class="form-control" required maxlength="60" disabled
+                       th:value="${form != null ? form['apellidos'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Telefono <span class="text-danger">*</span></label>
+                <input name="telefono" class="form-control" required maxlength="15" inputmode="tel" disabled
+                       th:value="${form != null ? form['telefono'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Correo (opcional)</label>
+                <input name="email" type="email" class="form-control" maxlength="100" disabled
+                       th:value="${form != null ? form['email'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Direccion (opcional)</label>
+                <input name="direccion" class="form-control" maxlength="150" disabled
+                       th:value="${form != null ? form['direccion'] : null}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Mascota -->
+    <div id="pMascotaTitulo" class="col-12 d-none">
+        <h6 class="fw-bold mb-0 mt-2"><i class="bi bi-heart me-1"></i>2. Mascota</h6>
+    </div>
+    <div id="pSinMascotas" class="col-12 d-none">
+        <div class="alert alert-info small mb-0"><i class="bi bi-info-circle me-1"></i>Este propietario aun no tiene mascotas registradas: registre la primera.</div>
+    </div>
+    <div id="pMascotaExistente" class="col-12 d-none">
+        <label class="form-label" for="pMascota">¿Que mascota viene? <span class="text-danger">*</span></label>
+        <select name="mascota" id="pMascota" class="form-select" required disabled
+                th:data-preseleccion="${form != null ? form['mascota'] : prefillMascota}"></select>
+    </div>
+    <div id="pMascotaNueva" class="col-12 d-none">
+        <div class="row g-3 p-3 mx-0 rounded" style="background:#fffbeb;border:1px solid #fde68a">
+            <div class="col-12 small fw-semibold"><i class="bi bi-plus-circle me-1"></i>Mascota nueva: complete sus datos</div>
+            <div class="col-md-5">
+                <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                <input name="nombre" class="form-control" required maxlength="40" disabled placeholder="Ej. Firulais"
+                       th:value="${form != null ? form['nombre'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Raza <span class="text-danger">*</span></label>
+                <select name="id_raza" class="form-select" required disabled>
+                    <option value="">Seleccione...</option>
+                    <th:block th:each="r, it : ${razas}">
+                        <optgroup th:if="${it.first or razas[it.index - 1].ID_ESPECIE != r.ID_ESPECIE}" th:label="${r.ESPECIE}"></optgroup>
+                        <option th:value="${r.ID_RAZA}" th:text="${r.ESPECIE + ' - ' + r.NOMBRE}"
+                                th:selected="${form != null and form['id_raza'] == r.ID_RAZA.toString()}"></option>
+                    </th:block>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sexo <span class="text-danger">*</span></label>
+                <select name="sexo" class="form-select" required disabled>
+                    <option value="M" th:selected="${form != null and form['sexo'] == 'M'}">Macho</option>
+                    <option value="H" th:selected="${form != null and form['sexo'] == 'H'}">Hembra</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Fecha de nacimiento (opcional)</label>
+                <input name="fecha_nacimiento" type="date" class="form-control" disabled
+                       th:value="${form != null ? form['fecha_nacimiento'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Color (opcional)</label>
+                <input name="color" class="form-control" maxlength="40" disabled
+                       th:value="${form != null ? form['color'] : null}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Esterilizado</label>
+                <select name="esterilizado" class="form-select" disabled>
+                    <option value="N" th:selected="${form == null or form['esterilizado'] != 'S'}">No</option>
+                    <option value="S" th:selected="${form != null and form['esterilizado'] == 'S'}">Si</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>
