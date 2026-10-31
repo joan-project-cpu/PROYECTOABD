@@ -11,6 +11,9 @@ WORKDIR /app
 COPY --from=construir /build/target/*.jar app.jar
 # Consultas del modo solucion (la app las lee al arrancar)
 COPY soluciones/etapa3_logica/consultas_app.sql soluciones/etapa3_logica/consultas_app.sql
+# Script de arranque (prepara el wallet de Oracle). sed quita saltos de linea de Windows si los hubiera.
+COPY entrypoint.sh /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Hora de Peru y ajustes para el plan gratuito (512 MB de RAM)
 ENV TZ=America/Lima \
@@ -20,5 +23,4 @@ ENV TZ=America/Lima \
     SERVER_TOMCAT_THREADS_MAX=20
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx280m", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=120m", "-Xss512k", \
-            "-Duser.timezone=America/Lima", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
